@@ -1,7 +1,4 @@
 import os
-import sys
-#os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-#os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
 from sampler.image_sampler import Image_Sampler
 import torch
 from torch.nn import functional as F

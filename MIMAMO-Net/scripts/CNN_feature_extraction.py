@@ -274,7 +274,7 @@ def get_frame_index(frame_path):
 def predict(data_loader,layer_name, model, des_dir):
     with torch.no_grad():
         for ims, target, img_path, video_name in tqdm(data_loader):
-            ims = ims.cuda(async=True)
+            ims = ims.cuda()
             output = get_vec(model, layer_name, ims)
             for feature, path, video_n in zip(output, img_path, video_name):
                 des_path = os.path.join(des_dir, video_n)

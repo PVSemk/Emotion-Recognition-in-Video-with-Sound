@@ -1,8 +1,9 @@
 import os
+
+
 class Video_Processor(object):
     def __init__(self, size=112, nomask=True, grey=False, quiet=True,
-                 tracked_vid=False, noface_save=False,
-                 OpenFace_exe = 'OpenFace/build/bin/FeatureExtraction'):
+                 tracked_vid=False, noface_save=False):
         ''' Video Processor using OpenFace to do face detection and face alignment
         Given an input video, this processor will create a directory where all cropped and aligned 
         faces are saved.
@@ -32,10 +33,7 @@ class Video_Processor(object):
         self.quiet = quiet
         self.tracked_vid = tracked_vid
         self.noface_save = noface_save
-        self.OpenFace_exe = OpenFace_exe 
-        if not isinstance(self.OpenFace_exe, str) or not os.path.exists(self.OpenFace_exe):
-            raise ValueError("OpenFace_exe has to be string object and needs to exist.")
-        self.OpenFace_exe = os.path.abspath(self.OpenFace_exe)
+
     def process(self, input_video, output_dir=None):
         '''        
         Arguments:
@@ -49,39 +47,37 @@ class Video_Processor(object):
         if not isinstance(input_video, str) or not os.path.exists(input_video):
             raise ValueError("input video has to be string object and needs to exist.")
         if os.path.isdir(input_video):
-            assert len(os.listdir(input_video))>0, "Input sequence directory {} cannot be empty".format(input_video)
+            assert len(os.listdir(input_video)) > 0, "Input sequence directory {} cannot be empty".format(input_video)
             arg_input = '-fdir'
         else:
             arg_input = '-f'
 
         input_video = os.path.abspath(input_video)
         if output_dir is None:
-            output_dir = os.path.join(os.path.dirname(input_video), 
-                os.path.basename(input_video).split('.')[0])
+            output_dir = os.path.join(os.path.dirname(input_video),
+                                      os.path.basename(input_video).split('.')[0])
         if isinstance(output_dir, str):
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
             else:
-            	print("output dir exists: {}. Video processing skipped.".format(output_dir))
-            	return
+                print("output dir exists: {}. Video processing skipped.".format(output_dir))
+                return
         else:
             raise ValueError("output_dir should be string object.")
-        opface_option = " {} ".format(arg_input)+input_video + " -out_dir "+ output_dir +" -simsize "+ str(self.size)
+        opface_option = " {} ".format(arg_input) + input_video + " -out_dir " + output_dir + " -simsize " + str(
+            self.size)
         opface_option += " -2Dfp -3Dfp -pdmparams -pose -aus -gaze -simalign "
 
         if not self.noface_save:
-            opface_option +=" -nobadaligned "
+            opface_option += " -nobadaligned "
         if self.tracked_vid:
-            opface_option +=" -tracked "
+            opface_option += " -tracked "
         if self.nomask:
-            opface_option+= " -nomask"
+            opface_option += " -nomask"
         if self.grey:
             opface_option += " -g"
         if self.quiet:
             opface_option += " -q"
         # execution
-        call = self.OpenFace_exe + opface_option
+        call = "docker exec -i openface FeatureExtraction" + opface_option
         os.system(call)
-
-
-

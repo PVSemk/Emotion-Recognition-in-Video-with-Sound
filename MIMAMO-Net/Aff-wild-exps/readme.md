@@ -5,3 +5,5 @@ python main.py --label_name arousal --save_root arousal/
 using 'merge_test_predictions.py' to get the average prediction of 5 models in five folds.
 
 using 'read_fold_txt.py' to print out the average CCC of five-fold validation experiments.
+![img.png](img.png)
+![img_1.png](img_1.png)

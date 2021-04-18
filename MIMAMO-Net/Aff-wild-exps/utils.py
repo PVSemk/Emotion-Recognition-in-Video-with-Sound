@@ -250,7 +250,7 @@ def amplitude_based_gaussian_blur(mag, phase, g_kernel):
     m, n = g_kernel.size()
     filters = torch.stack([g_kernel]*out_channel, dim=0)
     filters = torch.unsqueeze(filters, 1) # (output_channel, input_channel/groups, W, H)
-    filters =filters.type('torch.FloatTensor').cuda(async=True) if phase.is_cuda else filters
+    filters = filters.type('torch.FloatTensor').cuda() if phase.is_cuda else filters
     mag_phase_blurred = F.conv2d(mag_phase, filters, groups = in_channel, padding=m//2)
     
     mag_blurred = F.conv2d(mag, filters, groups = in_channel, padding=m//2)
@@ -272,7 +272,7 @@ def amplitude_based_gaussian_blurcoeff_batch_numpy(mag, phase, g_kernel):
             new_phase_b.append(denoised_phase)
         new_phase.append(new_phase_b)
     new_phase = np.asarray(new_phase)
-    return torch.Tensor(new_phase).type('torch.FloatTensor').cuda(async=True)
+    return torch.Tensor(new_phase).type('torch.FloatTensor').cuda()
 def gaussian_kernel(std, tap = 11):
     kernel = np.zeros((tap, tap))
     for x in range(tap):

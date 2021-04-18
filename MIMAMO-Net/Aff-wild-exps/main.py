@@ -82,7 +82,7 @@ def ccc(y_true, y_pred):
     v_pred = y_pred - pred_mean
     v_true = y_true - true_mean
     
-    rho =  np.sum(v_pred*v_true) / (np.sqrt(np.sum(v_pred**2)) * np.sqrt(np.sum(v_true**2)))
+    rho =  np.sum(v_pred*v_true) / (np.sqrt(np.sum(v_pred**2)) * np.sqrt(np.sum(v_true**2)))  # Вызывает вопросы
     std_predictions = np.std(y_pred)
     std_gt = np.std(y_true)
     

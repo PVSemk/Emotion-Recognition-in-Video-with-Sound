@@ -3,6 +3,7 @@ import argparse
 from os.path import join as pjoin
 import torchvision.transforms as transforms
 import six
+import sys
 def compose_transforms(meta, resize=256, center_crop=True,
                        override_meta_imsize=False):
     """Compose preprocessing transforms for model
