@@ -1,0 +1,32 @@
+experiment: ex_0014
+gpus: 0,1
+epochs: 15
+model_name: 'resnet50_ferplus_dag'  # 'resnet50_ferplus_dag' or 'resnet50' are expected
+model_dir: 'pretrained_models'
+# Optimizer and scheduler parameters
+lr: 0.0001
+# Data parameters
+milestones:
+  - 4
+  - 8
+  - 12
+  - 14
+gamma: 0.1
+tasks:
+  - VA
+data_path: /home/pavel/fast_drive/datasets/Aff-Wild-author-cropped/cropped_aligned
+labels: /home/pavel/fast_drive/datasets/Aff-Wild-author-cropped/annotations/VA_Set_small
+audio_path: /home/pavel/fast_drive/datasets/Aff-Wild-author-cropped/preprocessed_audio_no_wiener
+# val_data_path: affwild_2_tmp_ours/images
+# val_labels: affwild_2_tmp_ours/annotations.xml # training and validation parts are the same for overfitting
+height: 112
+width: 112
+# Dataloader parameters
+train_batch_size: 128
+test_batch_size: 128
+train_workers: 16
+test_workers: 16
+accelerator: ddp # dp, ddp or ddp_spawn
+digitize_number: 20
+ce_weight: 0.5
+test: false
