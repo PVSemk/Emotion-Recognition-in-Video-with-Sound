@@ -141,5 +141,10 @@ cython_debug/
 .idea/
 
 OpenFace/
-pytorch[_-]benchmarks/
+data
+pytorch[_-]benchmarks
 *.tar
+logs/
+openface
+preproc
+*.mp4
