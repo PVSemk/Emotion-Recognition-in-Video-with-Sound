@@ -41,7 +41,7 @@ class EmotionModel(pl.LightningModule):
         print(self.model)
         input_size = [(3, self.cfg.height, self.cfg.width)]
         if "audio_path" in self.cfg:
-            input_size.append((1, 64, 64))
+            input_size.append((1, 122, 122))
         summary(self.model, input_size=input_size, device="cpu")
         self.criterion_ccc = CCCLoss(self.cfg.digitize_number)
         self.criterion_ce = CrossEntropyLoss(self.cfg.digitize_number)

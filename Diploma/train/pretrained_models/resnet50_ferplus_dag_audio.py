@@ -75,6 +75,7 @@ class Resnet50_ferplus_dag_audio(nn.Module):
         self.audio_conv1 = nn.Conv2d(1, 32, kernel_size=[7, 7], stride=1, padding=0, bias=False)
         self.audio_bn1 = nn.BatchNorm2d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         self.audio_relu = nn.ReLU()
+        self.audio_pool = nn.MaxPool2d(kernel_size=[3, 3], stride=[2, 2], padding=(0, 0), dilation=1, ceil_mode=True)
         self.audio_conv2 = nn.Conv2d(32, 64, kernel_size=[3, 3], stride=1, padding=0, bias=False)
         self.audio_bn2 = nn.BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         self.debug_feats = OrderedDict() # only used for feature verification
@@ -243,7 +244,8 @@ class Resnet50_ferplus_dag_audio(nn.Module):
         audio_conv1 = self.audio_conv1(audio)
         audio_bn1 = self.audio_bn1(audio_conv1)
         audio_relu1 = self.audio_relu(audio_bn1)
-        audio_conv2 = self.audio_conv2(audio_relu1)
+        audio_pool = self.audio_pool(audio_relu1)
+        audio_conv2 = self.audio_conv2(audio_pool)
         audio_bn2 = self.audio_bn2(audio_conv2)
         audio_relu2 = self.audio_relu(audio_bn2)
 

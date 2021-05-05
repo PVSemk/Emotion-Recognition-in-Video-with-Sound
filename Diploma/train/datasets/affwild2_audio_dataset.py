@@ -96,7 +96,7 @@ class AffWildVADatasetWithAudio(Dataset):
         #                          y_axis='mel', sr=48000)
         # plt.show()
         # Calculated mean for audio is -42.4245, std 22.5223
-        audio = ((torch.from_numpy(audio.transpose()) + 42.4245) / 22.5223).unsqueeze(0)
+        audio = ((torch.from_numpy(audio.transpose()) + 26.33) / 20.328).unsqueeze(0)
         image = cv2.imread(item["image_path"])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 

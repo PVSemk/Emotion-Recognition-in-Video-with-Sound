@@ -1,4 +1,4 @@
-experiment: ex_0014
+experiment: ex_0017
 gpus: 0,1
 epochs: 15
 model_name: 'resnet50_ferplus_dag'  # 'resnet50_ferplus_dag' or 'resnet50' are expected
@@ -16,7 +16,7 @@ tasks:
   - VA
 data_path: /home/pavel/fast_drive/datasets/Aff-Wild-author-cropped/cropped_aligned
 labels: /home/pavel/fast_drive/datasets/Aff-Wild-author-cropped/annotations/VA_Set_small
-audio_path: /home/pavel/fast_drive/datasets/Aff-Wild-author-cropped/preprocessed_audio_no_wiener
+audio_path: /home/pavel/fast_drive/datasets/Aff-Wild-author-cropped/preprocessed_audio_2_sec_for_frame
 # val_data_path: affwild_2_tmp_ours/images
 # val_labels: affwild_2_tmp_ours/annotations.xml # training and validation parts are the same for overfitting
 height: 112
