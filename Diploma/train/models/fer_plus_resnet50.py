@@ -3,7 +3,7 @@ import six
 import sys
 
 import torch.nn as nn
-from .resnet50 import Head
+from .resnet50 import Head, GRU_Head
 import torch
 
 
@@ -14,20 +14,19 @@ class ResNetEmotionModel(nn.Module):
         self.backbone = self.load_model()
         last_layer_name, last_module = list(self.backbone.named_modules())[-1]
         try:
-            in_channels, out_channels = last_module.in_features, last_module.out_features
+            self.in_channels, self.out_channels = last_module.in_features, last_module.out_features
         except:
-            in_channels, out_channels = last_module.in_channels, last_module.out_channels
+            self.in_channels, self.out_channels = last_module.in_channels, last_module.out_channels
         setattr(self.backbone, '{}'.format(last_layer_name), nn.Identity())  # the second last layer has 512 dimensions
-        setattr(self, 'output_feature_dim', in_channels)
+        setattr(self, 'output_feature_dim', self.in_channels)
 
         pool_layer_name, pool_layer = list(self.backbone.named_modules())[-2]
         setattr(self.backbone, '{}'.format(pool_layer_name), nn.AdaptiveAvgPool2d((1, 1)))
 
-        self.val_fc = Head(in_channels, hidden_size, self.cfg.digitize_number)
-        self.arousal_fc = Head(in_channels, hidden_size, self.cfg.digitize_number)
+        self.val_fc = Head(self.in_channels, hidden_size, self.cfg.digitize_number)
+        self.arousal_fc = Head(self.in_channels, hidden_size, self.cfg.digitize_number)
         # self.val_fc = nn.Linear(in_channels, self.cfg.digitize_number)
         # self.arousal_fc = nn.Linear(in_channels, self.cfg.digitize_number)
-
 
     def forward(self, input, audio=None):
         features = self.backbone(input, audio).squeeze(-1).squeeze(-1) if audio is not None else self.backbone(input).squeeze(-1).squeeze(-1)
@@ -74,5 +73,27 @@ class ResNetEmotionModel(nn.Module):
             mod = importlib.import_module(module_name)
         return mod
 
+
+class ResNetEmotionModelGRU(ResNetEmotionModel):
+    def __init__(self, cfg, hidden_size=128):
+        super().__init__(cfg, hidden_size)
+        self.val_fc = GRU_Head(self.in_channels, hidden_size, self.cfg.digitize_number)
+        self.arousal_fc = GRU_Head(self.in_channels, hidden_size, self.cfg.digitize_number)
+        self.seq_len = self.cfg.seq_len
+
+    def forward(self, input, audio=None):
+        orig_shape = input.shape
+        B, S, C, H, W = input.shape
+        input = input.view(B*S, C, H, W)
+        features = self.backbone(input, audio).squeeze(-1).squeeze(-1) if audio is not None else self.backbone(input).squeeze(-1).squeeze(-1)
+        features = features.view(orig_shape[0], self.seq_len, -1)
+        val_pred = self.val_fc(features)
+        arousal_pred = self.arousal_fc(features)
+        return {'val_pred': val_pred, 'arousal_pred': arousal_pred}
+
+
 def create_model(cfg):
-    return ResNetEmotionModel(cfg)
+    if not cfg.rnn:
+        return ResNetEmotionModel(cfg)
+    else:
+        return ResNetEmotionModelGRU(cfg)

@@ -3,6 +3,7 @@ from losses import CCCLoss, CrossEntropyLoss
 from time import strftime
 from datasets.affwild2_dataset import AffWildVADataset
 from datasets.affwild2_audio_dataset import AffWildVADatasetWithAudio
+from datasets.affwild2_rnn_dataset import AffWildVADatasetRNN
 import yaml
 
 from munch import munchify
@@ -39,9 +40,14 @@ class EmotionModel(pl.LightningModule):
         else:
             raise NotImplementedError
         print(self.model)
-        input_size = [(3, self.cfg.height, self.cfg.width)]
-        if "audio_path" in self.cfg:
-            input_size.append((1, 122, 122))
+        if not self.cfg.rnn:
+            input_size = [(3, self.cfg.height, self.cfg.width)]
+            if "audio_path" in self.cfg:
+                input_size.append((1, 122, 122))
+        else:
+            input_size = [(self.cfg.seq_len, 3, self.cfg.height, self.cfg.width)]
+            if "audio_path" in self.cfg:
+                input_size.append((self.cfg.seq_len, 1, 122, 122))
         summary(self.model, input_size=input_size, device="cpu")
         self.criterion_ccc = CCCLoss(self.cfg.digitize_number)
         self.criterion_ce = CrossEntropyLoss(self.cfg.digitize_number)
@@ -60,51 +66,84 @@ class EmotionModel(pl.LightningModule):
     #     return torch.round(number * self.cfg.num_levels + self.cfg.num_levels).long()
 
     def train_dataloader(self):
-        if "audio_path" in self.cfg:
-            dataset = AffWildVADatasetWithAudio(self.cfg.data_path, self.cfg.labels, self.cfg.audio_path,
-                                                             self.train_transform)
+        if self.cfg.rnn:
+            if "audio_path" in self.cfg:
+                raise NotImplementedError("Wait for it")
+            else:
+                dataset = AffWildVADatasetRNN(self.cfg.data_path, self.cfg.labels, self.train_transform, self.cfg.seq_len)
         else:
-            dataset = AffWildVADataset(self.cfg.data_path, self.cfg.labels,
-                                       self.train_transform)
+            if "audio_path" in self.cfg:
+                dataset = AffWildVADatasetWithAudio(self.cfg.data_path, self.cfg.labels, self.cfg.audio_path,
+                                                             self.train_transform)
+            else:
+                dataset = AffWildVADataset(self.cfg.data_path, self.cfg.labels,
+                                           self.train_transform)
         return DataLoader(dataset, batch_size=self.cfg.train_batch_size, num_workers=self.cfg.train_workers,
                           shuffle=True, drop_last=True)
 
     def val_dataloader(self):
-        if "audio_path" in self.cfg:
-            dataset = AffWildVADatasetWithAudio(self.cfg.data_path, self.cfg.labels, self.cfg.audio_path,
-                                                             self.train_transform, mode="val")
+        if self.cfg.rnn:
+            if "audio_path" in self.cfg:
+                raise NotImplementedError("Wait for it")
+            else:
+                dataset = AffWildVADatasetRNN(self.cfg.data_path, self.cfg.labels, self.train_transform,
+                                              self.cfg.seq_len, mode='val')
         else:
-            dataset = AffWildVADataset(self.cfg.data_path, self.cfg.labels,
-                                       self.train_transform, mode="val")
+            if "audio_path" in self.cfg:
+                dataset = AffWildVADatasetWithAudio(self.cfg.data_path, self.cfg.labels, self.cfg.audio_path,
+                                                    self.train_transform, mode="val")
+            else:
+                dataset = AffWildVADataset(self.cfg.data_path, self.cfg.labels,
+                                           self.train_transform, mode='val')
         return DataLoader(dataset, batch_size=self.cfg.test_batch_size, num_workers=self.cfg.test_workers,
                           shuffle=False)
 
     def test_dataloader(self):
         return self.val_dataloader()
 
+    def flatten_rnn_pred(self, val_pred, arousal_pred, val_target, arousal_target):
+        B, S, C = val_pred.size()
+        val_target = val_target.view(B * S, -1)
+        arousal_target = arousal_target.view(B * S, -1)
+        val_pred = val_pred.view(B * S, C)
+        arousal_pred = arousal_pred.view(B * S, C)
+        return val_pred, arousal_pred, val_target, arousal_target
+
+
     def calculate_loss(self, outputs, targets):
-        valence = targets['valence']
-        arousal = targets['arousal']
+        val_target = targets['valence']
+        arousal_target = targets['arousal']
+        val_pred = outputs['val_pred']
+        arousal_pred = outputs['arousal_pred']
         # valence_class = self.number_to_class(valence)
         # arousal_class = self.number_to_class(arousal)
-        loss_ccc_v = self.criterion_ccc(outputs['val_pred'], valence)
-        loss_ccc_a = self.criterion_ccc(outputs['arousal_pred'], arousal)
-        loss_ce_v = self.criterion_ce(outputs['val_pred'], valence)
-        loss_ce_a = self.criterion_ce(outputs['arousal_pred'], arousal)
+        if self.cfg.rnn:
+            val_pred, arousal_pred, val_target, arousal_target = self.flatten_rnn_pred(val_pred, arousal_pred, val_target, arousal_target)
+        loss_ccc_v = self.criterion_ccc(val_pred, val_target)
+        loss_ccc_a = self.criterion_ccc(arousal_pred, arousal_target)
+        loss_ce_v = self.criterion_ce(val_pred, val_target)
+        loss_ce_a = self.criterion_ce(arousal_pred, arousal_target)
         loss_ce = self.ce_weight * (loss_ce_a + loss_ce_v)
         loss_ccc = (1 - self.ce_weight) * (loss_ccc_a + loss_ccc_v)
         loss = loss_ce + loss_ccc
         return loss_ce, loss_ccc, loss
 
     def calculate_metrics(self, outputs, targets):
-        valence_pred = outputs['val_pred'].softmax(-1)
-        if not self.bins.device == valence_pred.device:
-            self.bins = self.bins.to(valence_pred.device)
-        valence_pred = (self.bins * valence_pred).sum(-1)
-        valence_CCC = CCC_score(valence_pred, targets["valence"])
-        arousal_pred = outputs['arousal_pred'].softmax(-1)
+        val_target = targets['valence']
+        arousal_target = targets['arousal']
+        val_pred = outputs['val_pred']
+        arousal_pred = outputs['arousal_pred']
+        if self.cfg.rnn:
+            val_pred, arousal_pred, val_target, arousal_target = self.flatten_rnn_pred(val_pred, arousal_pred,
+                                                                                       val_target, arousal_target)
+        val_pred = val_pred.softmax(-1)
+        if not self.bins.device == val_pred.device:
+            self.bins = self.bins.to(val_pred.device)
+        val_pred = (self.bins * val_pred).sum(-1)
+        valence_CCC = CCC_score(val_pred, val_target)
+        arousal_pred = arousal_pred.softmax(-1)
         arousal_pred = (self.bins * arousal_pred).sum(-1)
-        arousal_CCC = CCC_score(arousal_pred, targets["arousal"])
+        arousal_CCC = CCC_score(arousal_pred, arousal_target)
         return valence_CCC, arousal_CCC
 
     def training_step(self, batch, batch_idx):
@@ -118,7 +157,7 @@ class EmotionModel(pl.LightningModule):
         total_CCC = valence_CCC + arousal_CCC
         # self.log('train/valence_CCC', valence_CCC, prog_bar=True, sync_dist=True, on_step=True, on_epoch=False)
         # self.log('train/arousal_CCC', arousal_CCC, prog_bar=True, sync_dist=True, on_step=True, on_epoch=False)
-        self.log('train/total_ccc', total_CCC, prog_bar=True, logger=True, sync_dist=False)
+        self.log('train/total_ccc', total_CCC, prog_bar=True, logger=True, sync_dist=True)
         self.log('train/loss_ce', loss_ce, sync_dist=True)
         self.log('train/loss_ccc', loss_ccc, sync_dist=True)
         self.log('train/loss', loss, sync_dist=True)
