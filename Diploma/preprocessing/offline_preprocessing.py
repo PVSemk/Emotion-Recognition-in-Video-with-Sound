@@ -11,12 +11,9 @@ class Preprocessor(object):
     def __init__(self,
                  save_size=112, nomask=True, grey=False, quiet=True,
                  tracked_vid=False, noface_save=False,
-                 benchmark_dir="pytorch-benchmarks", feature_extractor_model="resnet50_ferplus_dag",
-                 feature_layer="pool5_7x7_s1"
                  ):
         self.video_processor = Video_Processor(save_size, nomask, grey, quiet,
                                                tracked_vid, noface_save)
-        self.feature_extractor = Resnet50_Extractor(benchmark_dir, feature_extractor_model, feature_layer)
 
     def run(self):
         call = "docker-compose -f openface/docker-compose.yml up -d openface"
@@ -30,9 +27,7 @@ class Preprocessor(object):
                     input_video = os.path.join(root, file)
                     video_name = os.path.basename(input_video).split('.')[0]
                     output_dir = os.path.join(root, "aligned_faces", video_name)
-                    feature_dir = os.path.join(output_dir, video_name + "_pool5")
                     self.video_processor.process(input_video, output_dir)
-                    # self.feature_extractor.run(output_dir, feature_dir, video_name=video_name)
         call = "docker-compose -f openface/docker-compose.yml stop"
         os.system(call)
 

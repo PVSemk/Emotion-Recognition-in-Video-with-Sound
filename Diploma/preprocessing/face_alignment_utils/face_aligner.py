@@ -1,9 +1,6 @@
-import face_alignment
-from PIL import Image
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-import torch
 
 
 
@@ -111,21 +108,6 @@ def get_aligned_face(img, left, right, side=None, w=128, h=128):
         aligned_faces.append(aligned_face)
 
     return aligned_faces
-
-
-def batch_wrapper(imgs, predictions):
-    batch_num = len(predictions)
-    output = []
-    for i in range(batch_num):
-        if predictions[i] is not None:
-            eyes_landmarks = get_eyes(predictions[i])
-            left, right = get_centers(eyes_landmarks)
-            faces = get_aligned_face(imgs[i].numpy(), left, right, w=112, h=112)
-            output.append(faces)
-        else:
-            output.append(None)
-    return output
-
 
 
 

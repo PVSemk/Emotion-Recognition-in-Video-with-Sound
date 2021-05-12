@@ -1,19 +1,17 @@
 import os
 import cv2
 import time
-import json
 
 import torch
 import numpy as np
 import face_alignment
-import matplotlib.pyplot as plt
 
 from argparse import ArgumentParser
 from joblib import Parallel, delayed
 from face_alignment_utils.face_aligner import get_centers, get_eyes
 from face_alignment_utils.utils import warp_and_crop_face, get_reference_facial_points
 
-from torch.multiprocessing import set_start_method, Pool, Queue
+from torch.multiprocessing import set_start_method
 try:
      set_start_method('spawn')
 except RuntimeError:
@@ -76,12 +74,6 @@ def batch_wrapper(image, landmarks):
             output.append(None)
 
     return output
-
-
-
-def crop(image, x_start, y_start, x_end, y_end):
-    image = image[y_start:y_end, x_start:x_end,]
-    return image
 
 
 def resize(image, window_height=500):
