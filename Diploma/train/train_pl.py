@@ -48,7 +48,7 @@ class EmotionModel(pl.LightningModule):
             input_size = [(self.cfg.seq_len, 3, self.cfg.height, self.cfg.width)]
             if "audio_path" in self.cfg:
                 input_size.append((self.cfg.seq_len, 1, 122, 122))
-        summary(self.model, input_size=input_size, device="cpu")
+        # summary(self.model, input_size=input_size, device="cpu")
         self.criterion_ccc = CCCLoss(self.cfg.digitize_number)
         self.criterion_ce = CrossEntropyLoss(self.cfg.digitize_number)
         if "ce_weight" in self.cfg:
@@ -103,8 +103,8 @@ class EmotionModel(pl.LightningModule):
 
     def flatten_rnn_pred(self, val_pred, arousal_pred, val_target, arousal_target):
         B, S, C = val_pred.size()
-        val_target = val_target.view(B * S, -1)
-        arousal_target = arousal_target.view(B * S, -1)
+        val_target = val_target.view(B * S)
+        arousal_target = arousal_target.view(B * S)
         val_pred = val_pred.view(B * S, C)
         arousal_pred = arousal_pred.view(B * S, C)
         return val_pred, arousal_pred, val_target, arousal_target

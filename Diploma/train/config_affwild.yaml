@@ -1,5 +1,5 @@
-experiment: ex_0020
-gpus: 0
+experiment: ex_0027
+gpus: 0,1
 epochs: 15
 model_name: 'resnet50_ferplus_dag'  # 'resnet50_ferplus_dag' or 'resnet50' are expected.
 model_dir: 'pretrained_models'
@@ -26,8 +26,8 @@ width: 112
 # Dataloader parameters
 train_batch_size: 16
 test_batch_size: 16
-train_workers: 0
-test_workers: 0
+train_workers: 16
+test_workers: 16
 accelerator: ddp # dp, ddp or ddp_spawn
 digitize_number: 20
 ce_weight: 0.5

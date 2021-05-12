@@ -67,6 +67,8 @@ class AffWildVADatasetRNN(Dataset):
                 label = label[0]
                 valence, arousal = label.split(',')
                 valence, arousal = float(valence), float(arousal)
+                if valence == -5 or arousal == -5:
+                    continue
                 labels_dict[frame_idx] = valence, arousal
 
             for frame_idx, label in labels_dict.items():

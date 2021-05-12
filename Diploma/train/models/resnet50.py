@@ -25,7 +25,8 @@ class GRU_Head(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_classes):
         super(GRU_Head, self).__init__()
         self._name = 'Head'
-        self.GRU_layer = nn.GRU(input_dim, hidden_dim, batch_first=True, bidirectional=True)
+        self.GRU_layer = nn.LSTM(input_dim, hidden_dim, batch_first=True, bidirectional=True)
+        # self.GRU_layer = nn.GRU(input_dim, hidden_dim, batch_first=True, bidirectional=True)
         self.fc_1 = nn.Linear(hidden_dim * 2, num_classes)
 
     def forward(self, x):

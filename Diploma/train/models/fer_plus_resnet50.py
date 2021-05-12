@@ -4,7 +4,6 @@ import sys
 
 import torch.nn as nn
 from .resnet50 import Head, GRU_Head
-import torch
 
 
 class ResNetEmotionModel(nn.Module):
